@@ -1,0 +1,116 @@
+cmake_minimum_required(VERSION 3.2)
+
+set(CMAKE_CONFIGURATION_TYPES "Debug" "Release")
+
+set(ProjectName Panasonic)
+project(${ProjectName})
+
+set(SOURCES "main.cpp")
+
+########################################################################
+# OpenCV
+set(OpenCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencv-3.4.6)
+find_package(OpenCV REQUIRED)
+message("${OpenCV_LIB_COMPONENTS}")
+include_directories(AFTER ${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIB_DIR})
+
+########################################################################
+# EmotionSensing
+set(EmotionSensing_DIR ${CMAKE_CURRENT_SOURCE_DIR}/EmotionSensing)
+include_directories(AFTER ${EmotionSensing_DIR}/include)
+link_directories(${EmotionSensing_DIR}/lib)
+
+########################################################################
+# Sources
+#source_group("include" FILES ${HEADERS})
+source_group("src" FILES ${SOURCES})
+
+set(FILES ${HEADERS} ${SOURCES})
+
+set(OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
+
+add_executable(${ProjectName} ${FILES})
+
+if(MSVC)
+    set(DEFAULT_CXX_FLAGS "/DWIN32 /D_WINDOWS /D_MSBC /W4 /WX- /nologo /fp:precise /arch:AVX /Zc:wchar_t /TP /Gd")
+    if("1800" VERSION_LESS MSVC_VERSION)
+        set(DEFAULT_CXX_FLAGS "${DEFAULT_CXX_FLAGS} /EHsc")
+    endif()
+
+    set(CMAKE_CXX_FLAGS "${DEFAULT_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1 /Gy /GR- /GS /Gm-")
+    set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /GL /GR- /DNDEBUG")
+
+    target_link_libraries(${ProjectName}
+        opencv_core
+        opencv_imgproc
+        opencv_objdetect
+        opencv_highgui
+        opencv_video
+        debug Debug/EmotionSensing
+        optimized Release/EmotionSensing)
+
+elseif(UNIX)
+    set(DEFAULT_CXX_FLAGS "-Wall -O2 -std=c++11 -std=gnu++11 -march=native")
+    set(CMAKE_CXX_FLAGS "${DEFAULT_CXX_FLAGS}")
+elseif(APPLE)
+endif()
+
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+set_target_properties(${ProjectName}
+    PROPERTIES
+        OUTPUT_NAME_DEBUG "${ProjectName}" OUTPUT_NAME_RELEASE "${ProjectName}"
+        VS_DEBUGGER_WORKING_DIRECTORY "${OUTPUT_DIRECTORY}")
+
+# Copy files for development
+###########################################################
+file(GLOB_RECURSE OPENCV_HAARCASCADES_FILES ${OpenCV_INSTALL_PATH}/**/haarcascade_frontalface_alt2.xml)
+add_custom_command(
+    TARGET ${ProjectName} POST_BUILD
+    #COMMAND ${CMAKE_COMMAND} -E copy ${EmotionSensing_DIR}/assets/fpwa.ini ${OUTPUT_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${EmotionSensing_DIR}/assets/model_params ${OUTPUT_DIRECTORY}/model_params
+    COMMAND ${CMAKE_COMMAND} -E copy ${OPENCV_HAARCASCADES_FILES} ${OUTPUT_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E copy ${EmotionSensing_DIR}/lib/$(Configuration)/${CMAKE_SHARED_LIBRARY_PREFIX}EmotionSensing${CMAKE_SHARED_LIBRARY_SUFFIX} ${OUTPUT_DIRECTORY}
+)
+file(GLOB OPENCV_DLL_FILES ${OpenCV_DIR}/${OpenCV_ARCH}/${OpenCV_RUNTIME}/bin/*.dll)
+foreach(DLL_FILE IN LISTS OPENCV_DLL_FILES)
+    add_custom_command(
+        TARGET ${ProjectName} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DLL_FILE} ${OUTPUT_DIRECTORY}
+  )
+endforeach()
+
+# Instation
+############################################################
+set(INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../EmotionDetector/Panasonic")
+set(RUN_BATCH "${INSTALL_DIR}/run_window.bat")
+
+install(TARGETS ${ProjectName}
+        CONFIGURATIONS Debug
+        RUNTIME DESTINATION "${INSTALL_DIR}")
+install(TARGETS ${ProjectName}
+        CONFIGURATIONS Release
+        RUNTIME DESTINATION "${INSTALL_DIR}")
+
+install(FILES
+    ${OPENCV_HAARCASCADES_FILES}
+    ${EmotionSensing_DIR}/lib/$(Configuration)/${CMAKE_SHARED_LIBRARY_PREFIX}EmotionSensing${CMAKE_SHARED_LIBRARY_SUFFIX}
+    DESTINATION ${INSTALL_DIR})
+
+install(DIRECTORY "${EmotionSensing_DIR}/assets/model_params"
+    DESTINATION ${INSTALL_DIR})
+
+foreach(DLL_FILE IN LISTS OPENCV_DLL_FILES)
+    add_custom_command(
+        TARGET ${ProjectName} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DLL_FILE} ${OUTPUT_DIRECTORY}
+  )
+endforeach()
+
+file(WRITE "${RUN_BATCH}" "start .\\Panasonic.exe -window")
+
+# Sub projects
+#add_subdirectory(test)
