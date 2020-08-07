@@ -92,7 +92,6 @@ bool test(const char* src, const char* dst0, const char* dst1, const char* direc
 UTEST(Quantize_Encode, grad)
 {
     EXPECT_TRUE(test("grad.png", "grad_out.jpg", "grad.txt", "../data/"));
-    EXPECT_TRUE(test("test.bmp", "test_out.jpg", "test.txt", "../data/"));
 }
 
 #if 0
