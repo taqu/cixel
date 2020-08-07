@@ -8,7 +8,7 @@
 #include "../cixel.h"
 
 #ifdef _WIN32
-#    define SPRINTF(BUFF, FORMAT, VAR0, VAR1) sprintf_s((BUFF), (FORMAT), (VAR0), (VAR1))
+#    define SPRINTF(BUFF, FORMAT, VAR0, VAR1) sprintf_s((BUFF), sizeof(BUFF), (FORMAT), (VAR0), (VAR1))
 #else
 #    define SPRINTF(BUFF, FORMAT, VAR0, VAR1) sprintf((BUFF), (FORMAT), (VAR0), (VAR1))
 #endif
@@ -92,8 +92,10 @@ bool test(const char* src, const char* dst0, const char* dst1, const char* direc
 UTEST(Quantize_Encode, grad)
 {
     EXPECT_TRUE(test("grad.png", "grad_out.jpg", "grad.txt", "../data/"));
+    EXPECT_TRUE(test("test.bmp", "test_out.jpg", "test.txt", "../data/"));
 }
 
+#if 0
 UTEST(Quantize_Encode, snake)
 {
     EXPECT_TRUE(test("snake.png", "snake_out.jpg", "snake.txt", "../data/"));
@@ -118,3 +120,5 @@ UTEST(Quantize_Encode, person)
 {
     EXPECT_TRUE(test("person.jpg", "person_out.jpg", "person.txt", "../data/"));
 }
+#endif
+
