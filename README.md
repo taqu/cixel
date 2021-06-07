@@ -2,7 +2,7 @@
 
 # Introduction
 A library of sixel encording for C/C++.  
-Sixel is a bitmap format for DEC's terminals (refer to [All Abount SIXELs](https://www.digiater.nl/openvms/decus/vax90b1/krypton-nasa/all-about-sixels.text)).
+Sixel is a bitmap format for DEC's terminals (refer to [All About SIXELs](https://www.digiater.nl/openvms/decus/vax90b1/krypton-nasa/all-about-sixels.text)).
 
 # Usage
 Put CIXEL_IMPLEMENTATION to create implementation.
